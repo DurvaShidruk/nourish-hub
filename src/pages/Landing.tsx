@@ -61,7 +61,7 @@ export default function Landing() {
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                to="/results"
+                to="/shop"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-card text-foreground font-display font-semibold text-sm border border-border hover:bg-muted transition-all duration-200"
               >
                 Browse Products
