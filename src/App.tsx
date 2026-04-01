@@ -9,6 +9,10 @@ import CartSidebar from "@/components/CartSidebar";
 import Landing from "@/pages/Landing";
 import GetStarted from "@/pages/GetStarted";
 import Results from "@/pages/Results";
+import Shop from "@/pages/Shop";
+import Checkout from "@/pages/Checkout";
+import OrderConfirmation from "@/pages/OrderConfirmation";
+import About from "@/pages/About";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +30,10 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/get-started" element={<GetStarted />} />
             <Route path="/results" element={<Results />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/order-confirmation" element={<OrderConfirmation />} />
+            <Route path="/about" element={<About />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppProvider>

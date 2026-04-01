@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Product } from "./products";
+import { toast } from "sonner";
 
 export interface UserProfile {
   age: number;
@@ -13,6 +14,26 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface DeliveryDetails {
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+  pincode: string;
+}
+
+export interface OrderInfo {
+  items: CartItem[];
+  subtotal: number;
+  discount: number;
+  deliveryFee: number;
+  total: number;
+  delivery: DeliveryDetails;
+  paymentMethod: string;
+  orderId: string;
+  date: string;
+}
+
 interface AppState {
   profile: UserProfile | null;
   setProfile: (p: UserProfile) => void;
@@ -20,18 +41,38 @@ interface AppState {
   addToCart: (product: Product) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, qty: number) => void;
+  clearCart: () => void;
   cartOpen: boolean;
   setCartOpen: (open: boolean) => void;
   cartTotal: number;
   cartCount: number;
+  cartSubtotal: number;
+  cartDiscount: number;
+  cartDeliveryFee: number;
+  lastOrder: OrderInfo | null;
+  setLastOrder: (order: OrderInfo | null) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
+function loadCart(): CartItem[] {
+  try {
+    const saved = localStorage.getItem("nutricart-cart");
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(loadCart);
   const [cartOpen, setCartOpen] = useState(false);
+  const [lastOrder, setLastOrder] = useState<OrderInfo | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem("nutricart-cart", JSON.stringify(cart));
+  }, [cart]);
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -45,6 +86,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { product, quantity: 1 }];
     });
+    toast.success(`${product.name} added to cart`);
   };
 
   const removeFromCart = (id: string) => {
@@ -63,10 +105,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const cartTotal = cart.reduce(
+  const clearCart = () => setCart([]);
+
+  const cartSubtotal = cart.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
+  const cartDiscount = cartSubtotal > 30 ? cartSubtotal * 0.1 : 0;
+  const cartDeliveryFee = cartSubtotal > 50 ? 0 : 3.99;
+  const cartTotal = cartSubtotal - cartDiscount + cartDeliveryFee;
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -78,10 +125,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addToCart,
         removeFromCart,
         updateQuantity,
+        clearCart,
         cartOpen,
         setCartOpen,
         cartTotal,
         cartCount,
+        cartSubtotal,
+        cartDiscount,
+        cartDeliveryFee,
+        lastOrder,
+        setLastOrder,
       }}
     >
       {children}
