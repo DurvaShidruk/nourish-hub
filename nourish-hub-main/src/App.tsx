@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/data/context";
 import Navbar from "@/components/Navbar";
 import CartSidebar from "@/components/CartSidebar";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import Landing from "@/pages/Landing";
 import GetStarted from "@/pages/GetStarted";
 import Results from "@/pages/Results";
@@ -40,9 +39,7 @@ export default function App() {
   }, []);
 
   // ⛔ Prevent UI flashing before auth loads
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+  if (loading) return null;
 
   return (
     <QueryClientProvider client={queryClient}>
