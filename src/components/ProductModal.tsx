@@ -33,9 +33,9 @@ export default function ProductModal({ product, onClose }: Props) {
             onClick={onClose}
           />
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1}}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="fixed inset-4 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-lg z-50 bg-card rounded-3xl border border-border shadow-elevated overflow-hidden flex flex-col max-h-[90vh]"
           >
             <button
