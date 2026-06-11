@@ -49,8 +49,9 @@ interface AppState {
   cartSubtotal: number;
   cartDiscount: number;
   cartDeliveryFee: number;
+  orders: OrderInfo[];
+  addOrder: (order: OrderInfo) => void;
   lastOrder: OrderInfo | null;
-  setLastOrder: (order: OrderInfo | null) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -64,15 +65,32 @@ function loadCart(): CartItem[] {
   }
 }
 
+function loadOrders(): OrderInfo[] {
+  try {
+    const saved = localStorage.getItem("nutricart-orders");
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [cart, setCart] = useState<CartItem[]>(loadCart);
   const [cartOpen, setCartOpen] = useState(false);
-  const [lastOrder, setLastOrder] = useState<OrderInfo | null>(null);
+  const [orders, setOrders] = useState<OrderInfo[]>(loadOrders);
 
   useEffect(() => {
     localStorage.setItem("nutricart-cart", JSON.stringify(cart));
   }, [cart]);
+
+  useEffect(() => {
+    localStorage.setItem("nutricart-orders", JSON.stringify(orders));
+  }, [orders]);
+
+  const addOrder = (order: OrderInfo) => {
+    setOrders((prev) => [order, ...prev]);
+  };
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -116,6 +134,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const cartTotal = cartSubtotal - cartDiscount + cartDeliveryFee;
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  const lastOrder = orders.length > 0 ? orders[0] : null;
+
   return (
     <AppContext.Provider
       value={{
@@ -133,8 +153,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         cartSubtotal,
         cartDiscount,
         cartDeliveryFee,
+        orders,
+        addOrder,
         lastOrder,
-        setLastOrder,
       }}
     >
       {children}
