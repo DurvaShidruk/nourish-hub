@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, Leaf, Menu, X } from "lucide-react";
+import { ShoppingCart, Leaf, Menu, X, History } from "lucide-react";
 import { useApp } from "@/data/context";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +8,7 @@ const navLinks = [
   { to: "/", label: "Home" },
   { to: "/shop", label: "Shop" },
   { to: "/get-started", label: "Get Started" },
+  { to: "/order-history", label: "Orders" },
   { to: "/about", label: "About" },
 ];
 

@@ -14,7 +14,7 @@ const steps = [
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cart, cartSubtotal, cartDiscount, cartDeliveryFee, cartTotal, clearCart, setLastOrder } = useApp();
+  const { cart, cartSubtotal, cartDiscount, cartDeliveryFee, cartTotal, clearCart, addOrder } = useApp();
   const [step, setStep] = useState(0);
   const [delivery, setDelivery] = useState<DeliveryDetails>({ name: "", phone: "", address: "", city: "", pincode: "" });
   const [paymentMethod, setPaymentMethod] = useState("cod");
@@ -50,7 +50,7 @@ export default function Checkout() {
 
   const placeOrder = () => {
     const orderId = "NC-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-    setLastOrder({
+    addOrder({
       items: [...cart],
       subtotal: cartSubtotal,
       discount: cartDiscount,

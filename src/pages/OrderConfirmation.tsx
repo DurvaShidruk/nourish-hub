@@ -71,8 +71,8 @@ export default function OrderConfirmation() {
           <Link to="/shop" className="flex-1 py-3.5 rounded-2xl bg-primary text-primary-foreground font-display font-semibold text-sm flex items-center justify-center gap-2 hover:bg-sage-dark transition-colors">
             Continue Shopping <ArrowRight className="w-4 h-4" />
           </Link>
-          <Link to="/" className="flex-1 py-3.5 rounded-2xl bg-secondary text-secondary-foreground font-display font-semibold text-sm flex items-center justify-center gap-2 hover:bg-muted transition-colors">
-            Back to Home
+          <Link to="/order-history" className="flex-1 py-3.5 rounded-2xl bg-secondary text-secondary-foreground font-display font-semibold text-sm flex items-center justify-center gap-2 hover:bg-muted transition-colors">
+            View Order History
           </Link>
         </div>
       </div>
