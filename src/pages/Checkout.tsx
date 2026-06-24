@@ -5,6 +5,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, CreditCard, ClipboardList, Check, ArrowLeft, ArrowRight, Truck, Banknote, Smartphone } from "lucide-react";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { checkoutSchema, CheckoutValues } from "@/lib/validations";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const steps = [
   { label: "Delivery", icon: MapPin },
@@ -16,10 +27,26 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { cart, cartSubtotal, cartDiscount, cartDeliveryFee, cartTotal, clearCart, addOrder } = useApp();
   const [step, setStep] = useState(0);
-  const [delivery, setDelivery] = useState<DeliveryDetails>({ name: "", phone: "", address: "", city: "", pincode: "" });
-  const [paymentMethod, setPaymentMethod] = useState("cod");
-  const [cardNumber, setCardNumber] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const form = useForm<CheckoutValues>({
+    resolver: zodResolver(checkoutSchema),
+    defaultValues: {
+      delivery: {
+        name: "",
+        phone: "",
+        address: "",
+        city: "",
+        pincode: "",
+      },
+      paymentMethod: "cod",
+      card: {
+        cardNumber: "",
+        expiry: "",
+        cvv: "",
+      },
+    },
+    mode: "onChange",
+  });
 
   if (cart.length === 0) {
     return (
@@ -32,23 +59,30 @@ export default function Checkout() {
     );
   }
 
-  const validateStep0 = () => {
-    const e: Record<string, string> = {};
-    if (!delivery.name.trim()) e.name = "Required";
-    if (!delivery.phone.trim()) e.phone = "Required";
-    if (!delivery.address.trim()) e.address = "Required";
-    if (!delivery.city.trim()) e.city = "Required";
-    if (!delivery.pincode.trim()) e.pincode = "Required";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const next = () => {
-    if (step === 0 && !validateStep0()) return;
+  const next = async () => {
+    if (step === 0) {
+      const isValid = await form.trigger([
+        "delivery.name",
+        "delivery.phone",
+        "delivery.address",
+        "delivery.city",
+        "delivery.pincode",
+      ]);
+      if (!isValid) return;
+    } else if (step === 1) {
+      const isValid = await form.trigger([
+        "paymentMethod",
+        ...(form.getValues("paymentMethod") === "card"
+          ? ["card.cardNumber" as const, "card.expiry" as const, "card.cvv" as const]
+          : []),
+      ]);
+      if (!isValid) return;
+    }
     setStep((s) => Math.min(s + 1, 2));
   };
 
-  const placeOrder = () => {
+  const onSubmit = (data: CheckoutValues) => {
+    if (step < 2) return;
     const orderId = "NC-" + Math.random().toString(36).substring(2, 8).toUpperCase();
     addOrder({
       items: [...cart],
@@ -56,8 +90,8 @@ export default function Checkout() {
       discount: cartDiscount,
       deliveryFee: cartDeliveryFee,
       total: cartTotal,
-      delivery,
-      paymentMethod,
+      delivery: data.delivery as DeliveryDetails,
+      paymentMethod: data.paymentMethod,
       orderId,
       date: new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }),
     });
@@ -67,6 +101,8 @@ export default function Checkout() {
   };
 
   const inputCls = "w-full px-4 py-3 rounded-2xl bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 transition-all text-sm";
+
+  const deliveryFields = ["name", "phone", "address", "city", "pincode"] as const;
 
   return (
     <div className="min-h-screen pt-24 pb-0">
@@ -84,109 +120,171 @@ export default function Checkout() {
           ))}
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
-            {step === 0 && (
-              <div className="glass-strong rounded-3xl p-8 space-y-5">
-                <h2 className="font-display font-bold text-xl text-foreground">Delivery Details</h2>
-                {(["name", "phone", "address", "city", "pincode"] as const).map((field) => (
-                  <div key={field}>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">{field === "pincode" ? "PIN Code" : field.charAt(0).toUpperCase() + field.slice(1)}</label>
-                    <input
-                      value={delivery[field]}
-                      onChange={(e) => { setDelivery({ ...delivery, [field]: e.target.value }); setErrors({ ...errors, [field]: "" }); }}
-                      placeholder={`Enter ${field}`}
-                      className={inputCls}
-                    />
-                    {errors[field] && <p className="text-destructive text-xs mt-1">{errors[field]}</p>}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <AnimatePresence mode="wait">
+              <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
+                {step === 0 && (
+                  <div className="glass-strong rounded-3xl p-8 space-y-5">
+                    <h2 className="font-display font-bold text-xl text-foreground">Delivery Details</h2>
+                    {deliveryFields.map((field) => (
+                      <FormField
+                        key={field}
+                        control={form.control}
+                        name={`delivery.${field}`}
+                        render={({ field: formField }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                              {field === "pincode" ? "PIN Code" : field.charAt(0).toUpperCase() + field.slice(1)}
+                            </FormLabel>
+                            <FormControl>
+                              <input
+                                placeholder={`Enter ${field}`}
+                                className={inputCls}
+                                {...formField}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                )}
 
-            {step === 1 && (
-              <div className="glass-strong rounded-3xl p-8 space-y-5">
-                <h2 className="font-display font-bold text-xl text-foreground">Payment Method</h2>
-                {[
-                  { id: "cod", label: "Cash on Delivery", icon: Banknote },
-                  { id: "upi", label: "UPI", icon: Smartphone },
-                  { id: "card", label: "Credit/Debit Card", icon: CreditCard },
-                ].map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setPaymentMethod(m.id)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all ${paymentMethod === m.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted"}`}
-                  >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${paymentMethod === m.id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
-                      <m.icon className="w-5 h-5" />
+                {step === 1 && (
+                  <div className="glass-strong rounded-3xl p-8 space-y-5">
+                    <h2 className="font-display font-bold text-xl text-foreground">Payment Method</h2>
+                    
+                    <FormField
+                      control={form.control}
+                      name="paymentMethod"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          {[
+                            { id: "cod", label: "Cash on Delivery", icon: Banknote },
+                            { id: "upi", label: "UPI", icon: Smartphone },
+                            { id: "card", label: "Credit/Debit Card", icon: CreditCard },
+                          ].map((m) => (
+                            <button
+                              type="button"
+                              key={m.id}
+                              onClick={() => {
+                                field.onChange(m.id);
+                                form.clearErrors("card");
+                              }}
+                              className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all ${field.value === m.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted"}`}
+                            >
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${field.value === m.id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+                                <m.icon className="w-5 h-5" />
+                              </div>
+                              <span className="font-display font-semibold text-sm text-foreground">{m.label}</span>
+                              {field.value === m.id && <Check className="w-4 h-4 text-primary ml-auto" />}
+                            </button>
+                          ))}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch("paymentMethod") === "card" && (
+                      <div className="space-y-3 pt-2">
+                        <FormField
+                          control={form.control}
+                          name="card.cardNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <input placeholder="Card Number" className={inputCls} {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                          <FormField
+                            control={form.control}
+                            name="card.expiry"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <input placeholder="MM/YY" className={inputCls} {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="card.cvv"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <input placeholder="CVV" className={inputCls} {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {step === 2 && (
+                  <div className="space-y-6">
+                    <div className="glass-strong rounded-3xl p-8 space-y-4">
+                      <h2 className="font-display font-bold text-xl text-foreground">Order Summary</h2>
+                      <div className="space-y-3">
+                        {cart.map((item) => (
+                          <div key={item.product.id} className="flex items-center gap-3">
+                            <img src={item.product.image} alt={item.product.name} className="w-12 h-12 rounded-xl object-cover" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-display font-semibold text-sm text-foreground truncate">{item.product.name}</p>
+                              <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                            </div>
+                            <span className="font-display font-semibold text-sm">${(item.product.price * item.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t border-border pt-4 space-y-2 text-sm">
+                        <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>${cartSubtotal.toFixed(2)}</span></div>
+                        {cartDiscount > 0 && <div className="flex justify-between text-primary"><span>Discount (10%)</span><span>-${cartDiscount.toFixed(2)}</span></div>}
+                        <div className="flex justify-between text-muted-foreground"><span>Delivery</span><span>{cartDeliveryFee === 0 ? "Free" : `$${cartDeliveryFee.toFixed(2)}`}</span></div>
+                        <div className="flex justify-between font-display font-bold text-foreground text-base pt-2 border-t border-border"><span>Total</span><span>${cartTotal.toFixed(2)}</span></div>
+                      </div>
                     </div>
-                    <span className="font-display font-semibold text-sm text-foreground">{m.label}</span>
-                    {paymentMethod === m.id && <Check className="w-4 h-4 text-primary ml-auto" />}
-                  </button>
-                ))}
-                {paymentMethod === "card" && (
-                  <div className="space-y-3 pt-2">
-                    <input placeholder="Card Number" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} className={inputCls} />
-                    <div className="grid grid-cols-2 gap-3">
-                      <input placeholder="MM/YY" className={inputCls} />
-                      <input placeholder="CVV" className={inputCls} />
+                    <div className="glass-strong rounded-3xl p-6 space-y-2">
+                      <h3 className="font-display font-semibold text-sm text-foreground flex items-center gap-2"><Truck className="w-4 h-4 text-primary" />Delivery to</h3>
+                      <p className="text-sm text-muted-foreground">{form.getValues("delivery.name")} · {form.getValues("delivery.phone")}</p>
+                      <p className="text-sm text-muted-foreground">{form.getValues("delivery.address")}, {form.getValues("delivery.city")} - {form.getValues("delivery.pincode")}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Payment: {form.getValues("paymentMethod") === "cod" ? "Cash on Delivery" : form.getValues("paymentMethod") === "upi" ? "UPI" : "Card"}</p>
                     </div>
                   </div>
                 )}
-              </div>
-            )}
+              </motion.div>
+            </AnimatePresence>
 
-            {step === 2 && (
-              <div className="space-y-6">
-                <div className="glass-strong rounded-3xl p-8 space-y-4">
-                  <h2 className="font-display font-bold text-xl text-foreground">Order Summary</h2>
-                  <div className="space-y-3">
-                    {cart.map((item) => (
-                      <div key={item.product.id} className="flex items-center gap-3">
-                        <img src={item.product.image} alt={item.product.name} className="w-12 h-12 rounded-xl object-cover" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-display font-semibold text-sm text-foreground truncate">{item.product.name}</p>
-                          <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
-                        </div>
-                        <span className="font-display font-semibold text-sm">${(item.product.price * item.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="border-t border-border pt-4 space-y-2 text-sm">
-                    <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>${cartSubtotal.toFixed(2)}</span></div>
-                    {cartDiscount > 0 && <div className="flex justify-between text-primary"><span>Discount (10%)</span><span>-${cartDiscount.toFixed(2)}</span></div>}
-                    <div className="flex justify-between text-muted-foreground"><span>Delivery</span><span>{cartDeliveryFee === 0 ? "Free" : `$${cartDeliveryFee.toFixed(2)}`}</span></div>
-                    <div className="flex justify-between font-display font-bold text-foreground text-base pt-2 border-t border-border"><span>Total</span><span>${cartTotal.toFixed(2)}</span></div>
-                  </div>
-                </div>
-                <div className="glass-strong rounded-3xl p-6 space-y-2">
-                  <h3 className="font-display font-semibold text-sm text-foreground flex items-center gap-2"><Truck className="w-4 h-4 text-primary" />Delivery to</h3>
-                  <p className="text-sm text-muted-foreground">{delivery.name} · {delivery.phone}</p>
-                  <p className="text-sm text-muted-foreground">{delivery.address}, {delivery.city} - {delivery.pincode}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Payment: {paymentMethod === "cod" ? "Cash on Delivery" : paymentMethod === "upi" ? "UPI" : "Card"}</p>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Navigation */}
-        <div className="flex gap-3 mt-8 mb-16">
-          {step > 0 && (
-            <button onClick={() => setStep(step - 1)} className="flex-1 py-3.5 rounded-2xl bg-secondary text-secondary-foreground font-display font-semibold text-sm flex items-center justify-center gap-2 hover:bg-muted transition-colors">
-              <ArrowLeft className="w-4 h-4" /> Back
-            </button>
-          )}
-          {step < 2 ? (
-            <button onClick={next} className="flex-1 py-3.5 rounded-2xl bg-primary text-primary-foreground font-display font-semibold text-sm flex items-center justify-center gap-2 hover:bg-sage-dark transition-colors">
-              Next <ArrowRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <button onClick={placeOrder} className="flex-1 py-3.5 rounded-2xl bg-primary text-primary-foreground font-display font-semibold text-sm flex items-center justify-center gap-2 hover:bg-sage-dark transition-colors">
-              <Check className="w-4 h-4" /> Place Order
-            </button>
-          )}
-        </div>
+            {/* Navigation */}
+            <div className="flex gap-3 mt-8 mb-16">
+              {step > 0 && (
+                <button type="button" onClick={() => setStep(step - 1)} className="flex-1 py-3.5 rounded-2xl bg-secondary text-secondary-foreground font-display font-semibold text-sm flex items-center justify-center gap-2 hover:bg-muted transition-colors">
+                  <ArrowLeft className="w-4 h-4" /> Back
+                </button>
+              )}
+              {step < 2 ? (
+                <button type="button" onClick={next} className="flex-1 py-3.5 rounded-2xl bg-primary text-primary-foreground font-display font-semibold text-sm flex items-center justify-center gap-2 hover:bg-sage-dark transition-colors">
+                  Next <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <button type="submit" className="flex-1 py-3.5 rounded-2xl bg-primary text-primary-foreground font-display font-semibold text-sm flex items-center justify-center gap-2 hover:bg-sage-dark transition-colors">
+                  <Check className="w-4 h-4" /> Place Order
+                </button>
+              )}
+            </div>
+          </form>
+        </Form>
       </div>
       <Footer />
     </div>
