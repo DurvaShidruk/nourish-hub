@@ -97,12 +97,12 @@ Contributions are always welcome!
 
 If you'd like to contribute:
 
-1. Fork the repository
-2. Create a new branch
+1. Fork the repository and clone it locally
+2. Create a new branch (`git checkout -b feature-branch`)
 3. Make your changes
-4. Commit your work
-5. Submit a Pull Request
-
+4. Commit your work (`git commit -m "feat: your feature"`)
+5. Push to your fork (`git push origin feature-branch`)
+6. Submit a Pull Request
 Please read the CONTRIBUTING.md file before contributing.
 
 ## 🏷️ GSSoC 2026
