@@ -38,7 +38,7 @@ interface AppState {
   profile: UserProfile | null;
   setProfile: (p: UserProfile) => void;
   cart: CartItem[];
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, qty?: number) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, qty: number) => void;
   clearCart: () => void;
@@ -92,19 +92,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setOrders((prev) => [order, ...prev]);
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, qty: number = 1) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
         return prev.map((item) =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + qty }
             : item
         );
       }
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { product, quantity: qty }];
     });
-    toast.success(`${product.name} added to cart`);
+    toast.success(`${product.name}${qty > 1 ? ` (×${qty})` : ""} added to cart`);
   };
 
   const removeFromCart = (id: string) => {
