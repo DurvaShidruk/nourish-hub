@@ -93,9 +93,17 @@ export default function Shop() {
         {/* Filter + Sort */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-8">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-            <div className="flex-1 w-full">
-              <FilterBar search={search} setSearch={setSearch} activeFilters={activeFilters} toggleFilter={toggleFilter} />
-            </div>
+              <FilterBar
+                search={search}
+                setSearch={setSearch}
+                activeFilters={activeFilters}
+                toggleFilter={toggleFilter}
+                onClear={() => {
+                  setSearch("");
+                  setActiveFilters([]);
+                  setActiveCategory(null);
+                }}
+              />
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
