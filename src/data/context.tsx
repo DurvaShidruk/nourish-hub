@@ -16,6 +16,7 @@ export interface CartItem {
 
 export interface DeliveryDetails {
   name: string;
+  email: string;
   phone: string;
   address: string;
   city: string;
