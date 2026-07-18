@@ -48,7 +48,7 @@ export default function CartSidebar() {
                 <div className="space-y-4">
                   {cart.map((item) => (
                     <div key={item.product.id} className="flex gap-4 p-3 rounded-2xl bg-card border border-border">
-                      <img src={item.product.image} alt={item.product.name} className="w-16 h-16 rounded-xl object-cover" />
+                      <img src={item.product.image} alt={item.product.name} className="w-16 h-16 rounded-xl object-cover" draggable="false" />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-display font-semibold text-sm text-foreground truncate">{item.product.name}</h4>
                         <p className="text-sm text-muted-foreground mt-0.5">${item.product.price.toFixed(2)}</p>

@@ -164,6 +164,7 @@ export default function OrderHistory() {
                                   src={item.product.image}
                                   alt={item.product.name}
                                   className="w-11 h-11 rounded-xl object-cover"
+                                  draggable="false"
                                 />
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-foreground truncate">

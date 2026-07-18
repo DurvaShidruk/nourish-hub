@@ -24,6 +24,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
+          draggable="false"
         />
       </div>
       <div className="p-4">
@@ -45,7 +46,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
             ${product.price.toFixed(2)}
           </span>
           <button
-            onClick={() => addToCart(product)}
+            onClick={(e) => { e.stopPropagation(); addToCart(product); }}
             className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-sage-dark transition-colors"
           >
             <Plus className="w-4 h-4" />

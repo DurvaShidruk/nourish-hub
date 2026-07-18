@@ -129,6 +129,11 @@ export default function Results() {
             setSearch={setSearch}
             activeFilters={activeFilters}
             toggleFilter={toggleFilter}
+            onClear={() => {
+              setSearch("");
+              setActiveFilters([]);
+              setActiveCategory(null);
+            }}
           />
         </motion.div>
 
